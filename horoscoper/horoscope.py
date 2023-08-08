@@ -2,11 +2,13 @@ import csv
 import random
 import time
 from enum import Enum
+from functools import cache
 from itertools import zip_longest
 from pathlib import Path
 from typing import Iterable
 
 from horoscoper.llm import LLM, LLMContext
+from horoscoper.settings import settings
 
 
 class Sign(str, Enum):
@@ -82,7 +84,7 @@ class HoroscopeLLM(LLM):
 
     def infer_batch(
         self, contexts: list[LLMContext]
-    ) -> Iterable[tuple[LLMContext, str]]:
+    ) -> Iterable[list[tuple[LLMContext, str]]]:
         """Produce a horoscope for multiple contexts"""
 
         words_batch = [(context, self._infer(context)) for context in contexts]
@@ -98,6 +100,14 @@ class HoroscopeLLM(LLM):
 
         for i in range(max_words):
             time.sleep(delays[i] / 1000)
+
+            batch = []
             for context, words in words_batch:
                 if i < len(words):
-                    yield context, words[i]
+                    batch.append((context, words[i]))
+            yield batch
+
+
+@cache
+def get_model() -> HoroscopeLLM:
+    return HoroscopeLLM(horoscope_csv_file=settings.horoscope_csv_file)

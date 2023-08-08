@@ -9,6 +9,10 @@ class LLMContext:
     conversation_id: UUID
     prefix: list[str]
 
+    @property
+    def redis_key(self):
+        return self.conversation_id.bytes
+
 
 class LLM(ABC):
     @abstractmethod
