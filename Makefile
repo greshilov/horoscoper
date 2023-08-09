@@ -12,3 +12,7 @@ fmt:
 .PHONY: test
 test:
 	pytest .
+
+.PHONY: dev
+dev:
+	uvicorn horoscoper.api:app --reload --log-level debug

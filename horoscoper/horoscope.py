@@ -3,12 +3,12 @@ import random
 import time
 from enum import Enum
 from functools import cache
-from itertools import zip_longest
 from pathlib import Path
 from typing import Iterable
 
-from horoscoper.llm import LLM, LLMContext
+from horoscoper.llm import LLM, LLMContext, LLMInferBatchResult, LLMInferResult
 from horoscoper.settings import settings
+from horoscoper.utils import last_iterator, produce_n_delays
 
 
 class Sign(str, Enum):
@@ -51,13 +51,14 @@ class HoroscopeIndex:
 
 class HoroscopeLLM(LLM):
     """
-    This class represents dummy LLM, that generates horoscope based on supplied context(s).
+    Represents dummy LLM, that generates horoscope based on supplied context(s).
     Generation process is artifically slowed down to mimic real LLM behaviour.
-    Overall spent time for will be be in [MIN_RESPONSE_TIME_MS, MAX_RESPONSE_TIME_MS] interval.
+    Overall spent time for will be in:
+        [MIN_RESPONSE_TIME_MS, MAX_RESPONSE_TIME_MS] interval.
     """
 
-    MIN_RESPONSE_TIME_MS = 500
-    MAX_RESPONSE_TIME_MS = 2500
+    MIN_RESPONSE_TIME_MS = 3000
+    MAX_RESPONSE_TIME_MS = 5000
 
     def __init__(self, horoscope_csv_file: Path):
         self.horoscope_index = HoroscopeIndex.load_from_csv(horoscope_csv_file)
@@ -67,36 +68,32 @@ class HoroscopeLLM(LLM):
         words = prediction.split(" ")
         return words
 
-    def infer(self, context: LLMContext) -> Iterable[str]:
+    def infer(self, context: LLMContext) -> Iterable[LLMInferResult]:
         """Produce a horoscope based on the supplied context"""
         words = self._infer(context)
 
         overall_time = random.randint(
             self.MIN_RESPONSE_TIME_MS, self.MAX_RESPONSE_TIME_MS
         )
-        delays = [random.random() for _ in range(len(words))]
-        coeff = overall_time / sum(delays)
-        delays = [delay * coeff for delay in delays]
+        delays = produce_n_delays(overall_time=overall_time, n=len(words))
 
-        for word, delay in zip(words, delays):
+        for is_last, (word, delay) in last_iterator(zip(words, delays)):
             time.sleep(delay / 1000)
-            yield word
+            yield LLMInferResult(
+                text=word,
+                is_last_chunk=is_last,
+            )
 
-    def infer_batch(
-        self, contexts: list[LLMContext]
-    ) -> Iterable[list[tuple[LLMContext, str]]]:
+    def infer_batch(self, contexts: list[LLMContext]) -> Iterable[LLMInferBatchResult]:
         """Produce a horoscope for multiple contexts"""
 
         words_batch = [(context, self._infer(context)) for context in contexts]
 
         max_words = max(len(words) for _, words in words_batch)
-
         overall_time = random.randint(
             self.MIN_RESPONSE_TIME_MS, self.MAX_RESPONSE_TIME_MS
         )
-        delays = [random.random() for _ in range(max_words)]
-        coeff = overall_time / sum(delays)
-        delays = [delay * coeff for delay in delays]
+        delays = produce_n_delays(overall_time=overall_time, n=max_words)
 
         for i in range(max_words):
             time.sleep(delays[i] / 1000)
@@ -104,7 +101,13 @@ class HoroscopeLLM(LLM):
             batch = []
             for context, words in words_batch:
                 if i < len(words):
-                    batch.append((context, words[i]))
+                    is_last_chunk = i == len(words) - 1
+                    result = LLMInferResult(
+                        is_last_chunk=is_last_chunk,
+                        text=words[i],
+                    )
+                    batch.append((context, result))
+
             yield batch
 
 
