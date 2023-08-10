@@ -8,7 +8,7 @@ from typing import Iterable
 
 from horoscoper.llm import LLM, LLMContext, LLMInferBatchResult, LLMInferResult
 from horoscoper.settings import settings
-from horoscoper.utils import last_iterator, produce_n_delays
+from horoscoper.utils import produce_n_delays
 
 
 class Sign(str, Enum):
@@ -77,11 +77,11 @@ class HoroscopeLLM(LLM):
         )
         delays = produce_n_delays(overall_time=overall_time, n=len(words))
 
-        for is_last, (word, delay) in last_iterator(zip(words, delays)):
+        for i, (word, delay) in enumerate(zip(words, delays)):
             time.sleep(delay / 1000)
             yield LLMInferResult(
                 text=word,
-                is_last_chunk=is_last,
+                is_last_chunk=i == len(delays) - 1,
             )
 
     def infer_batch(self, contexts: list[LLMContext]) -> Iterable[LLMInferBatchResult]:

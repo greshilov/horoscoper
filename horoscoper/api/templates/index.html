@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bootstrap demo</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
+</head>
+
+<body>
+  <div class="container">
+    <h1>Example multi user input:</h1>
+
+    <div class="container">
+      <div id="parent" class="row row-cols-3">
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sse.js@0.6.1/lib/sse.min.js "></script>
+
+  <script type="text/javascript">
+    // There is no practical sense creating more than 6, because of artificial
+    // limitation on maximum number of open connections over HTTP/1:
+    // https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#listening_for_custom_events
+
+    let N = 6
+    let template = `
+    <div class="col">
+      <form>
+        <div class="mb-3">
+          <label for="modelInput{i}" class="form-label">Request</label>
+          <input type="text" class="form-control" id="modelInput{i}" value="{input}">
+        </div>
+        <div class="mb-3">
+          <label for="modelOutput{i}" class="form-label">Response</label>
+          <textarea class="form-control" id="modelOutput{i}" rows="3"></textarea>
+        </div>
+        <hr/>
+      </form>
+    </div>`
+
+    function setupInput(i) {
+        let modelInput = document.getElementById(`modelInput${i}`)
+        
+        var source = new SSE(
+          "/api/v1/infer",
+          {
+            headers: { 'Content-Type': 'application/json' },
+            payload: JSON.stringify({ 'text': modelInput.textContent }),
+            method: 'POST',
+          }
+        );
+
+        source.addEventListener('message', function (e) {
+          // Assuming we receive JSON-encoded data payloads:
+          let data = JSON.parse(e.data)
+
+          let modelOutput = document.getElementById(`modelOutput${i}`)
+          modelOutput.textContent += data["parts"][0]
+
+          if (data["status"] == "FINISHED") {
+            source.close()
+          } else if (data["status"] == "ERROR") {
+            modelOutput.textContent += "ERROR: " + data["error"]
+          } else {
+            modelOutput.textContent += " "
+          }
+        });
+        source.stream();
+    }
+
+
+    window.onload = () => {
+      let parent = document.getElementById("parent")
+      for (i = 0; i < N; i+=1) {
+        let randomInput = (Math.random() + 1).toString(36).substring(7);
+        element = template.replaceAll("{i}", i).replaceAll("{input}", randomInput)
+        parent.innerHTML += element
+      }
+      
+      for (i = 0; i < N; i+=1) {
+        setupInput(i)
+      }
+    }
+  </script>
+</body>
+
+</html>

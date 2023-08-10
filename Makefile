@@ -15,4 +15,9 @@ test:
 
 .PHONY: dev
 dev:
-	uvicorn horoscoper.api:app --reload --log-level debug
+	uvicorn horoscoper.api.main:app --reload --log-level debug
+
+
+.PHONY: worker
+worker:
+	rq worker

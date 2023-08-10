@@ -1,5 +1,6 @@
 import logging
 from enum import Enum
+from typing import Optional
 
 from pydantic import BaseModel
 from redis import Redis
@@ -16,18 +17,21 @@ queue = Queue(connection=Redis())
 class InferMessageStatus(str, Enum):
     IN_PROGRESS = "IN_PROGRESS"
     FINISHED = "FINISHED"
+    ERROR = "ERROR"
 
 
 class InferMessage(BaseModel):
     parts: list[str]
+    error: Optional[str] = None
     status: InferMessageStatus
 
 
-def enqueue_context_batch(contexts: list[LLMContext]):
-    return queue.enqueue(process_context_batch, contexts)
+def enqueue(contexts: list[LLMContext]):
+    logger.info("Enqueue %r contexts: %r", len(contexts), contexts)
+    return queue.enqueue(process, contexts)
 
 
-def process_context_batch(contexts: list[LLMContext]):
+def process(contexts: list[LLMContext]):
     logger.info("Starting to process batch of contexts (%r)", contexts)
 
     horoscope_model = get_model()
