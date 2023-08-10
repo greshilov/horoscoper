@@ -1,3 +1,4 @@
+import logging
 from contextlib import AsyncExitStack, asynccontextmanager
 
 import redis.asyncio as redis
@@ -13,7 +14,12 @@ from .views import router
 @asynccontextmanager
 async def lifespan(app_: FastAPI):
     async with AsyncExitStack() as stack:
-        batcher = await stack.enter_async_context(ContextBatcher())
+        batcher = await stack.enter_async_context(
+            ContextBatcher(
+                batch_size=settings.batcher_batch_size,
+                window_size_ms=settings.batcher_window_ms,
+            )
+        )
         redis_client = await stack.enter_async_context(
             redis.from_url(settings.redis_url)
         )
@@ -29,3 +35,4 @@ app = FastAPI(
 )
 
 app.include_router(router)
+logging.basicConfig(level=logging.INFO)

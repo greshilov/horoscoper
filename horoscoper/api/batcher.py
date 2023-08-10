@@ -1,55 +1,64 @@
 import asyncio
+import contextlib
 import logging
 import time
-from typing import Union
+
+import async_timeout
 
 from horoscoper.llm import LLMContext
-from horoscoper.settings import settings
 from horoscoper.tasks import infer
 from horoscoper.utils import spawn
 
 logger = logging.getLogger(__name__)
-
-QueueSignal = object
-QueueObject = Union[QueueSignal, tuple[int, LLMContext]]
+QueueObject = tuple[int, LLMContext]
 
 
 class ContextBatcher:
-    EXIT = QueueSignal()
-
-    def __init__(self):
+    def __init__(self, batch_size: int, window_size_ms: int):
         self._queue: asyncio.Queue[QueueObject] = asyncio.Queue()
         self._is_running = False
         self._background_task = None
+        self._batch_size = batch_size
+        self._window_size = window_size_ms / 1000
+
+    async def _fill_batch(self) -> list[LLMContext]:
+        batch = []
+        with contextlib.suppress(asyncio.TimeoutError):
+            # Our initial timeout is infinite (None),
+            # until we receive the first message.
+            async with async_timeout.timeout(None) as cm:
+                while len(batch) < self._batch_size:
+                    enqueued_time, ctx = await self._queue.get()
+                    batch.append(ctx)
+
+                    # After we receive the first message
+                    # we have to set a deadline
+                    if cm.deadline is None:
+                        time_passed = time.monotonic() - enqueued_time
+                        time_left = self._window_size - time_passed
+
+                        if time_left > 0.0:
+                            cm.update(asyncio.get_running_loop().time() + time_left)
+                        else:
+                            # When head of queue has already expired
+                            # the best strategy is:
+                            #   * fill batch as full as possible
+                            #   * exit immediately
+                            elements_to_fill = min(
+                                self._queue.qsize(), self._batch_size - 1
+                            )
+                            for _ in range(elements_to_fill):
+                                _, ctx = await self._queue.get()
+                                batch.append(ctx)
+
+                            return batch
+        return batch
 
     async def run(self):
         try:
             self._is_running = True
             while True:
-                message = await self._queue.get()
-                if message is self.EXIT:
-                    logger.info("Gracefully stopping ContextBatcher")
-                    return
-
-                enqueued_time, ctx = message
-                window_time_left = settings.batcher_window_ms / 1000 - (
-                    time.monotonic() - enqueued_time
-                )
-
-                if window_time_left > 0:
-                    await asyncio.sleep(window_time_left)
-
-                batch = [ctx]
-                logger.info("Queue size: %r", self._queue.qsize())
-
-                elements_left = min(
-                    self._queue.qsize(), settings.batcher_batch_size - 1
-                )
-                logger.info("Elements left: %r", elements_left)
-                for _ in range(elements_left):
-                    _, ctx = self._queue.get_nowait()
-                    batch.append(ctx)
-
+                batch = await self._fill_batch()
                 infer.enqueue(batch)
         finally:
             self._is_running = False
@@ -57,9 +66,9 @@ class ContextBatcher:
     def close(self):
         if not self._is_running:
             return
-        self._queue.put_nowait(self.EXIT)
+        self._background_task.cancel()
 
-    def is_running(self):
+    def is_running(self) -> bool:
         return self._is_running
 
     def add_context_to_batch(self, context: LLMContext):
@@ -78,4 +87,5 @@ class ContextBatcher:
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         self.close()
-        await self._background_task
+        with contextlib.suppress(asyncio.CancelledError):
+            await self._background_task
