@@ -52,8 +52,8 @@ class HoroscopeIndex:
 class HoroscopeLLM(LLM):
     """
     Represents dummy LLM, that generates horoscope based on supplied context(s).
-    Generation process is artifically slowed down to mimic real LLM behaviour.
-    Overall spent time for will be in:
+    Generation process is artificially slowed down to mimic real LLM behaviour.
+    Overall spent time for inference will be in:
         [MIN_RESPONSE_TIME_MS, MAX_RESPONSE_TIME_MS] interval.
     """
 

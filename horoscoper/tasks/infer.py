@@ -1,17 +1,17 @@
 import logging
 from enum import Enum
+from functools import cache
 from typing import Optional
 
+import rq
 from pydantic import BaseModel
 from redis import Redis
 from redis.utils import pipeline
-from rq import Queue
 
 from horoscoper.horoscope import LLMContext, get_model
 from horoscoper.settings import settings
 
 logger = logging.getLogger(__name__)
-queue = Queue(connection=Redis())
 
 
 class InferMessageStatus(str, Enum):
@@ -22,13 +22,22 @@ class InferMessageStatus(str, Enum):
 
 class InferMessage(BaseModel):
     parts: list[str]
-    error: Optional[str] = None
     status: InferMessageStatus
+    error: Optional[str] = None
+
+
+@cache
+def get_queue() -> rq.Queue:
+    """
+    Queue is loaded lazily to avoid redis
+    connection creation during the import.
+    """
+    return rq.Queue(connection=Redis())
 
 
 def enqueue(contexts: list[LLMContext]):
     logger.info("Enqueue %r contexts: %r", len(contexts), contexts)
-    return queue.enqueue(process, contexts)
+    return get_queue().enqueue(process, contexts)
 
 
 def process(contexts: list[LLMContext]):
