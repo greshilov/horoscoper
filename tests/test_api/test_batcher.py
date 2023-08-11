@@ -15,6 +15,9 @@ class FakeInfer:
     def enqueue(self, contexts: list[LLMContext]):
         self.enqueued.append(contexts)
 
+    async def enqueue_async(self, contexts: list[LLMContext]):
+        self.enqueue(contexts)
+
 
 @pytest.fixture
 def fake_infer(monkeypatch):
