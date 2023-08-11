@@ -9,6 +9,12 @@ from typing import Coroutine
 logger = logging.getLogger(__name__)
 
 
+def produce_n_delays(overall_time: int, n: int) -> list[float]:
+    delays = [random.random() for _ in range(n)]
+    coeff = overall_time / sum(delays)
+    return [delay * coeff for delay in delays]
+
+
 def sync_to_async(func):
     @functools.wraps(func)
     async def wraps(*args, **kwargs):
@@ -17,12 +23,6 @@ def sync_to_async(func):
         return await loop.run_in_executor(None, argless_func)
 
     return wraps
-
-
-def produce_n_delays(overall_time: int, n: int) -> list[float]:
-    delays = [random.random() for _ in range(n)]
-    coeff = overall_time / sum(delays)
-    return [delay * coeff for delay in delays]
 
 
 def log_async_error(task: asyncio.Task):

@@ -9,7 +9,7 @@ from redis import Redis
 from redis.utils import pipeline
 
 from horoscoper.horoscope import LLMContext, get_model
-from horoscoper.settings import settings
+from horoscoper.settings import settings, setup_logging
 from horoscoper.utils import sync_to_async
 
 logger = logging.getLogger(__name__)
@@ -67,3 +67,11 @@ def process(contexts: list[LLMContext]):
                 )
 
     logger.info("Finished processing batch of contexts (%r)", contexts)
+
+
+if __name__ == "__main__":
+    setup_logging()
+    queue = get_queue()
+    redis = Redis.from_url(settings.redis_url)
+    worker = rq.Worker([queue], connection=redis)
+    worker.work()

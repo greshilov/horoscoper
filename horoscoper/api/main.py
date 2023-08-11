@@ -1,10 +1,9 @@
-import logging
 from contextlib import AsyncExitStack, asynccontextmanager
 
 import redis.asyncio as redis
 from fastapi import FastAPI
 
-from horoscoper.settings import settings
+from horoscoper.settings import settings, setup_logging
 
 from .batcher import ContextBatcher
 from .state import AppState
@@ -13,6 +12,7 @@ from .views import router
 
 @asynccontextmanager
 async def lifespan(app_: FastAPI):
+    setup_logging()
     async with AsyncExitStack() as stack:
         batcher = await stack.enter_async_context(
             ContextBatcher(
@@ -35,4 +35,3 @@ app = FastAPI(
 )
 
 app.include_router(router)
-logging.basicConfig(level=logging.INFO)

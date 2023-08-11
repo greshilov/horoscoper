@@ -20,4 +20,4 @@ dev:
 
 .PHONY: worker
 worker:
-	rq worker
+	python -m horoscoper.tasks.infer
