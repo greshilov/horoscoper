@@ -1,4 +1,5 @@
 import asyncio
+import functools
 import logging
 import random
 import sys
@@ -6,6 +7,16 @@ import traceback
 from typing import Coroutine
 
 logger = logging.getLogger(__name__)
+
+
+def sync_to_async(func):
+    @functools.wraps(func)
+    async def wraps(*args, **kwargs):
+        loop = asyncio.get_running_loop()
+        argless_func = functools.partial(func, *args, **kwargs)
+        return await loop.run_in_executor(None, argless_func)
+
+    return wraps
 
 
 def produce_n_delays(overall_time: int, n: int) -> list[float]:

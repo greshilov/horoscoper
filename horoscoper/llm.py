@@ -1,13 +1,13 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Iterable
-from uuid import UUID
+from uuid import UUID, uuid4
 
 
 @dataclass
 class LLMContext:
-    conversation_id: UUID
-    prefix: list[str]
+    conversation_id: UUID = field(default_factory=uuid4)
+    prefix: list[str] = field(default_factory=list)
 
     @property
     def redis_key(self):

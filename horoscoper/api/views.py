@@ -38,7 +38,7 @@ class APIInferRequest(BaseModel):
 @router.post("/api/v1/infer")
 async def infer(request: Request, state: State, infer_request: APIInferRequest):
     context = LLMContext(conversation_id=uuid.uuid4(), prefix=[infer_request.text])
-    state.batcher.add_context_to_batch(context)
+    await state.batcher.add_context_to_batch(context)
 
     async def iter_infer_response():
         async with state.redis.pubsub() as pubsub:

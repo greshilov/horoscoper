@@ -10,7 +10,7 @@ from horoscoper.tasks import infer
 from horoscoper.utils import spawn
 
 logger = logging.getLogger(__name__)
-QueueObject = tuple[int, LLMContext]
+QueueObject = tuple[float, LLMContext]
 
 
 class ContextBatcher:
@@ -20,6 +20,14 @@ class ContextBatcher:
         self._background_task = None
         self._batch_size = batch_size
         self._window_size = window_size_ms / 1000
+
+    async def run(self):
+        try:
+            while True:
+                batch = await self._fill_batch()
+                await infer.enqueue_async(batch)
+        finally:
+            self._is_running = False
 
     async def _fill_batch(self) -> list[LLMContext]:
         batch = []
@@ -34,58 +42,62 @@ class ContextBatcher:
                     # After we receive the first message
                     # we have to set a deadline
                     if cm.deadline is None:
-                        time_passed = time.monotonic() - enqueued_time
+                        time_passed = max(time.monotonic() - enqueued_time, 0)
                         time_left = self._window_size - time_passed
 
                         if time_left > 0.0:
                             cm.update(asyncio.get_running_loop().time() + time_left)
                         else:
-                            # When head of queue has already expired
-                            # the best strategy is:
+                            # When the head of the queue has already expired
+                            # the best strategy would be:
                             #   * fill batch as full as possible
                             #   * exit immediately
-                            elements_to_fill = min(
+                            available_contexts = min(
                                 self._queue.qsize(), self._batch_size - 1
                             )
-                            for _ in range(elements_to_fill):
-                                _, ctx = await self._queue.get()
+                            for _ in range(available_contexts):
+                                _, ctx = self._queue.get_nowait()
                                 batch.append(ctx)
 
                             return batch
         return batch
 
-    async def run(self):
-        try:
-            self._is_running = True
-            while True:
-                batch = await self._fill_batch()
-                infer.enqueue(batch)
-        finally:
-            self._is_running = False
+    async def start(self):
+        if self._is_running:
+            return
 
-    def close(self):
+        self._is_running = True
+        self._background_task = spawn(self.run())
+
+    async def stop(self):
         if not self._is_running:
             return
+
+        logger.info("Gracefully stopping ContextBatcher")
         self._background_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await self._background_task
 
     def is_running(self) -> bool:
         return self._is_running
 
-    def add_context_to_batch(self, context: LLMContext):
+    async def add_context_to_batch(self, context: LLMContext):
+        """
+        This method is made asynchronous in case we make underlying
+        queue bounded (to mitigate backpressure for example).
+        """
         if not self._is_running:
-            raise RuntimeError("Trying to batch context with stopped %r", self)
+            raise RuntimeError("Trying to batch context with stopped ContextBatcher")
 
         logger.info("Adding context %r to batch", context)
-        self._queue.put_nowait((time.monotonic(), context))
+        await self._queue.put((time.monotonic(), context))
 
     async def __aenter__(self) -> "ContextBatcher":
         if self._is_running:
             raise RuntimeError("Trying to launch running ContextBatcher")
 
-        self._background_task = spawn(self.run())
+        await self.start()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        self.close()
-        with contextlib.suppress(asyncio.CancelledError):
-            await self._background_task
+        await self.stop()

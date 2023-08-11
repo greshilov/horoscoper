@@ -10,6 +10,7 @@ from redis.utils import pipeline
 
 from horoscoper.horoscope import LLMContext, get_model
 from horoscoper.settings import settings
+from horoscoper.utils import sync_to_async
 
 logger = logging.getLogger(__name__)
 
@@ -32,12 +33,15 @@ def get_queue() -> rq.Queue:
     Queue is loaded lazily to avoid redis
     connection creation during the import.
     """
-    return rq.Queue(connection=Redis())
+    return rq.Queue(connection=Redis.from_url(settings.redis_url))
 
 
 def enqueue(contexts: list[LLMContext]):
     logger.info("Enqueue %r contexts: %r", len(contexts), contexts)
     return get_queue().enqueue(process, contexts)
+
+
+enqueue_async = sync_to_async(enqueue)
 
 
 def process(contexts: list[LLMContext]):
