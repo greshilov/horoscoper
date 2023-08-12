@@ -10,7 +10,7 @@ from .batcher import ContextBatcher
 @dataclass
 class AppState:
     """
-    FastAPI is built around `DependencyInjection` framework, where
+    FastAPI has built-in `DependencyInjection` framework, where
     dependencies are usually classes/functions defined on the module level.
 
     It works great with simple objects, but becomes pain in the neck for

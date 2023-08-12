@@ -2,6 +2,7 @@ from contextlib import AsyncExitStack, asynccontextmanager
 
 import redis.asyncio as redis
 from fastapi import FastAPI
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from horoscoper.settings import settings, setup_logging
 
@@ -33,5 +34,5 @@ app = FastAPI(
     "pretending they generated using LLM.",
     lifespan=lifespan,
 )
-
 app.include_router(router)
+Instrumentator().instrument(app).expose(app)

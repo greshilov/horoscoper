@@ -9,15 +9,21 @@ fmt:
 	black .
 	isort .
 
+redis:
+	docker compose -p horoscoper-dev -f docker-compose.dev.yml up -d
+
 .PHONY: test
-test:
-	pytest .
+test: redis
+	REDIS_URL=redis://localhost:36379/0 pytest .
 
 .PHONY: dev
-dev:
-	uvicorn horoscoper.api.main:app --reload --log-level debug
-
+dev-api: redis
+	REDIS_URL=redis://localhost:36379/0 uvicorn horoscoper.api.main:app --reload --log-level debug
 
 .PHONY: worker
-worker:
-	python -m horoscoper.tasks.infer
+dev-worker: redis
+	REDIS_URL=redis://localhost:36379/0 python -m horoscoper.tasks.infer
+
+.PHONY: clean
+clean:
+	docker compose -p horoscoper-dev -f docker-compose.dev.yml down -v

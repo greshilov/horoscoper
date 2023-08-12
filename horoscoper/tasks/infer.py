@@ -1,4 +1,5 @@
 import logging
+import os
 from enum import Enum
 from functools import cache
 from typing import Optional
@@ -33,7 +34,7 @@ def get_queue() -> rq.Queue:
     Queue is loaded lazily to avoid redis
     connection creation during the import.
     """
-    return rq.Queue(connection=Redis.from_url(settings.redis_url))
+    return rq.Queue(name="infer", connection=Redis.from_url(settings.redis_url))
 
 
 def enqueue(contexts: list[LLMContext]):
@@ -73,5 +74,6 @@ if __name__ == "__main__":
     setup_logging()
     queue = get_queue()
     redis = Redis.from_url(settings.redis_url)
-    worker = rq.Worker([queue], connection=redis)
+    worker_name = f"worker-{os.getenv('HOSTNAME', 'localhost')}"
+    worker = rq.Worker([queue], name=worker_name, connection=redis)
     worker.work()
