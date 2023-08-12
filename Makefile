@@ -24,6 +24,9 @@ dev-api: redis
 dev-worker: redis
 	REDIS_URL=redis://localhost:36379/0 python -m horoscoper.tasks.infer
 
+prod:
+	docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build
+
 .PHONY: clean
 clean:
 	docker compose -p horoscoper-dev -f docker-compose.dev.yml down -v

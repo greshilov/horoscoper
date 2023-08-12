@@ -1,0 +1,70 @@
+version: "3.9"
+
+services:
+  api:
+    ports: []
+
+  worker:
+    deploy:
+      replicas: 8
+  
+  caddy:
+    restart: unless-stopped
+    image: caddy:2.7
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./etc/config/caddy/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+    depends_on:
+      - api
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+  
+  worker_exporter:
+    image: mdawar/rq-exporter:v2.1.0
+    restart: unless-stopped
+    environment:
+      RQ_REDIS_HOST: redis
+    depends_on:
+      - redis
+
+  prometheus:
+    image: prom/prometheus:v2.46.0
+    container_name: prometheus
+    restart: unless-stopped
+    volumes:
+      - ./etc/config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    expose:
+      - 9090:9090
+  
+  grafana:
+    image: grafana/grafana:10.0.3
+    user: '472'
+    restart: unless-stopped
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./etc/config/grafana/provisioning/:/etc/grafana/provisioning/
+    environment:
+      GF_SERVER_ROOT_URL: http://${DOMAIN:-localhost}/grafana
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: false
+      GF_SERVER_SERVE_FROM_SUB_PATH: true
+    ports:
+      - 3000:3000
+    depends_on:
+      - prometheus
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  caddy_data:

@@ -10,6 +10,6 @@ RUN pip install poetry==1.5.1 && \
     poetry install --no-interaction --without dev
 
 COPY horoscoper horoscoper
-COPY etc etc
+COPY etc/data etc/data
 
 CMD ["uvicorn", "horoscoper.api.main:app", "--host", "0.0.0.0", "--port", "8000"]

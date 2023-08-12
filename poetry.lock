@@ -480,21 +480,6 @@ files = [
 twisted = ["twisted"]
 
 [[package]]
-name = "prometheus-fastapi-instrumentator"
-version = "6.1.0"
-description = "Instrument your FastAPI with Prometheus metrics."
-optional = false
-python-versions = ">=3.7.0,<4.0.0"
-files = [
-    {file = "prometheus_fastapi_instrumentator-6.1.0-py3-none-any.whl", hash = "sha256:2279ac1cf5b9566a4c3a07f78c9c5ee19648ed90976ab87d73d672abc1bfa017"},
-    {file = "prometheus_fastapi_instrumentator-6.1.0.tar.gz", hash = "sha256:1820d7a90389ce100f7d1285495ead388818ae0882e761c1f3e6e62a410bdf13"},
-]
-
-[package.dependencies]
-fastapi = ">=0.38.1,<1.0.0"
-prometheus-client = ">=0.8.0,<1.0.0"
-
-[[package]]
 name = "pycodestyle"
 version = "2.11.0"
 description = "Python style guide checker"
@@ -825,6 +810,21 @@ typing-extensions = {version = ">=3.10.0", markers = "python_version < \"3.10\""
 full = ["httpx (>=0.22.0)", "itsdangerous", "jinja2", "python-multipart", "pyyaml"]
 
 [[package]]
+name = "starlette-exporter"
+version = "0.16.0"
+description = "Prometheus metrics exporter for Starlette applications."
+optional = false
+python-versions = "*"
+files = [
+    {file = "starlette_exporter-0.16.0-py3-none-any.whl", hash = "sha256:9dbe8dc647acbeb8680d53cedbbb8042ca75ca1b6987f609c5601ea96ddb7422"},
+    {file = "starlette_exporter-0.16.0.tar.gz", hash = "sha256:728cccf975c85d3cf2844b0110b51e1fa2dce628ef68bc38da58ad691f9b5d68"},
+]
+
+[package.dependencies]
+prometheus-client = ">=0.12"
+starlette = "*"
+
+[[package]]
 name = "tomli"
 version = "2.0.1"
 description = "A lil' TOML parser"
@@ -1032,4 +1032,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "f66097b9d28ce4f07b13e63af929e64bf8b24ebbf9ca59d042ef29ee1b639f96"
+content-hash = "447321cad089eda799e3d5ced8db1170beda6e488c9f97b39c9cf3ac4b1ca4d2"

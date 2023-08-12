@@ -4,7 +4,7 @@ import logging
 import time
 
 import async_timeout
-from prometheus_client import Gauge
+from prometheus_client import Gauge, Histogram
 
 from horoscoper.llm import LLMContext
 from horoscoper.tasks import infer
@@ -14,7 +14,11 @@ logger = logging.getLogger(__name__)
 QueueObject = tuple[float, LLMContext]
 
 queue_size_gauge = Gauge("context_batcher_queue_size", "Queue size for context batcher")
-batch_size = Gauge("context_batcher_batch_size", "Size of the scheduled batch")
+batch_size = Histogram(
+    "context_batcher_batch_size",
+    "Size of the scheduled batch",
+    buckets=list(range(1, 10)),
+)
 
 
 class ContextBatcher:
@@ -32,7 +36,7 @@ class ContextBatcher:
                 await infer.enqueue_async(batch)
 
                 queue_size_gauge.set(self._queue.qsize())
-                batch_size.set(len(batch))
+                batch_size.observe(len(batch))
         finally:
             self._is_running = False
 
