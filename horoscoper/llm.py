@@ -6,21 +6,21 @@ from uuid import UUID, uuid4
 
 @dataclass
 class LLMContext:
-    conversation_id: UUID = field(default_factory=uuid4)
-    prefix: list[str] = field(default_factory=list)
+    id: UUID = field(default_factory=uuid4)
+    prefix: str = ""
 
     @property
-    def redis_key(self):
-        return self.conversation_id.bytes
+    def redis_key(self) -> bytes:
+        return self.id.bytes
 
     def __repr__(self) -> str:
-        return f"LLMContext({self.conversation_id}, prefix: {len(self.prefix)})"
+        return f"LLMContext({self.id}, prefix: {len(self.prefix)})"
 
 
 @dataclass
 class LLMInferResult:
     text: str
-    is_last_chunk: bool
+    is_last_chunk: bool = False
 
 
 # This type represents `inference slice` produced from multiple contexts

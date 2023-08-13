@@ -7,6 +7,7 @@ import async_timeout
 from prometheus_client import Gauge, Histogram
 
 from horoscoper.llm import LLMContext
+from horoscoper.settings import settings
 from horoscoper.tasks import infer
 from horoscoper.utils import spawn
 
@@ -16,7 +17,7 @@ QueueObject = tuple[float, LLMContext]
 queue_size_gauge = Gauge("context_batcher_queue_size", "Queue size for context batcher")
 batch_size = Histogram(
     "context_batcher_batch_size",
-    "Size of the scheduled batch",
+    "Size of the enqueued batch",
     buckets=list(range(1, 10)),
 )
 
@@ -33,7 +34,9 @@ class ContextBatcher:
         try:
             while True:
                 batch = await self._fill_batch()
-                await infer.enqueue_async(batch)
+                # TTL will discard stale jobs in case
+                # our system is overwhelmed with requests
+                await infer.enqueue_async(batch, ttl=settings.infer_job_ttl)
 
                 queue_size_gauge.set(self._queue.qsize())
                 batch_size.observe(len(batch))

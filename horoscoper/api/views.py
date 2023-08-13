@@ -1,5 +1,4 @@
 import logging
-import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
@@ -9,6 +8,7 @@ from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse, ServerSentEvent
 
 from horoscoper.llm import LLMContext
+from horoscoper.settings import settings
 from horoscoper.tasks.infer import InferMessage, InferMessageStatus
 
 from .state import State
@@ -37,7 +37,7 @@ class APIInferRequest(BaseModel):
 
 @router.post("/api/v1/infer")
 async def infer(request: Request, state: State, infer_request: APIInferRequest):
-    context = LLMContext(conversation_id=uuid.uuid4(), prefix=[infer_request.text])
+    context = LLMContext(prefix=infer_request.text)
     await state.batcher.add_context_to_batch(context)
 
     async def iter_infer_response():
@@ -49,13 +49,12 @@ async def infer(request: Request, state: State, infer_request: APIInferRequest):
                 if await request.is_disconnected():
                     return
 
-                raw_message = await pubsub.get_message(timeout=10)
-
+                raw_message = await pubsub.get_message(timeout=settings.infer_job_ttl)
                 if raw_message is None:
                     logger.info("Timeout inference for %r", context)
                     error_msg = InferMessage(
                         status=InferMessageStatus.ERROR,
-                        parts=[""],
+                        text="",
                         error="Timeout inference",
                     )
                     yield ServerSentEvent(data=error_msg.model_dump_json())
@@ -68,8 +67,10 @@ async def infer(request: Request, state: State, infer_request: APIInferRequest):
                 infer_message = InferMessage.model_validate_json(json_data)
 
                 yield ServerSentEvent(data=json_data.decode())
-
-                if infer_message.status is InferMessageStatus.FINISHED:
+                if infer_message.status in (
+                    InferMessageStatus.ERROR,
+                    InferMessageStatus.FINISHED,
+                ):
                     return
 
     return EventSourceResponse(iter_infer_response())

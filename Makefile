@@ -13,8 +13,8 @@ redis:
 	docker compose -p horoscoper-dev -f docker-compose.dev.yml up -d
 
 .PHONY: test
-test: redis
-	REDIS_URL=redis://localhost:36379/0 pytest .
+test:
+	pytest -v .
 
 .PHONY: dev
 dev-api: redis

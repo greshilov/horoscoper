@@ -57,7 +57,7 @@ class HoroscopeLLM(LLM):
         [MIN_RESPONSE_TIME_MS, MAX_RESPONSE_TIME_MS] interval.
     """
 
-    MIN_RESPONSE_TIME_MS = 1500
+    MIN_RESPONSE_TIME_MS = 500
     MAX_RESPONSE_TIME_MS = 3000
 
     def __init__(self, horoscope_csv_file: Path):

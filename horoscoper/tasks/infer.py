@@ -22,10 +22,19 @@ class InferMessageStatus(str, Enum):
     ERROR = "ERROR"
 
 
-class InferMessage(BaseModel):
-    parts: list[str]
+class InferMessage(BaseModel, extra="allow"):
+    """
+    Message used for communication between API and Workers.
+    """
+
+    text: str
     status: InferMessageStatus
     error: Optional[str] = None
+
+
+@cache
+def get_redis() -> Redis:
+    return Redis.from_url(settings.redis_url)
 
 
 @cache
@@ -34,12 +43,12 @@ def get_queue() -> rq.Queue:
     Queue is loaded lazily to avoid redis
     connection creation during the import.
     """
-    return rq.Queue(name="infer", connection=Redis.from_url(settings.redis_url))
+    return rq.Queue(name="infer", connection=get_redis())
 
 
-def enqueue(contexts: list[LLMContext]):
+def enqueue(contexts: list[LLMContext], **kwargs):
     logger.info("Enqueue %r contexts: %r", len(contexts), contexts)
-    return get_queue().enqueue(process, contexts)
+    return get_queue().enqueue(process, contexts, **kwargs)
 
 
 enqueue_async = sync_to_async(enqueue)
@@ -49,7 +58,7 @@ def process(contexts: list[LLMContext]):
     logger.info("Starting to process batch of contexts (%r)", contexts)
 
     horoscope_model = get_model()
-    redis_client = Redis.from_url(settings.redis_url)
+    redis_client = get_redis()
 
     for batch in horoscope_model.infer_batch(contexts=contexts):
         with pipeline(redis_client) as pipe:
@@ -63,7 +72,7 @@ def process(contexts: list[LLMContext]):
                 pipe.publish(
                     channel=context.redis_key,
                     message=InferMessage(
-                        parts=[infer_result.text], status=status
+                        text=infer_result.text, status=status
                     ).model_dump_json(),
                 )
 
@@ -73,7 +82,7 @@ def process(contexts: list[LLMContext]):
 if __name__ == "__main__":
     setup_logging()
     queue = get_queue()
-    redis = Redis.from_url(settings.redis_url)
+    redis = get_redis()
     worker_name = f"worker-{os.getenv('HOSTNAME', 'localhost')}"
     worker = rq.Worker([queue], name=worker_name, connection=redis)
     worker.work()

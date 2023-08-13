@@ -61,7 +61,7 @@
           let data = JSON.parse(e.data)
 
           let modelOutput = document.getElementById(`modelOutput${i}`)
-          modelOutput.textContent += data["parts"][0]
+          modelOutput.textContent += data["text"]
 
           if (data["status"] == "FINISHED") {
             source.close()

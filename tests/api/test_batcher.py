@@ -12,10 +12,10 @@ class FakeInfer:
     def __init__(self):
         self.enqueued = []
 
-    def enqueue(self, contexts: list[LLMContext]):
+    def enqueue(self, contexts: list[LLMContext], **kwargs):
         self.enqueued.append(contexts)
 
-    async def enqueue_async(self, contexts: list[LLMContext]):
+    async def enqueue_async(self, contexts: list[LLMContext], **kwargs):
         self.enqueue(contexts)
 
 
@@ -57,6 +57,7 @@ async def test_batcher_wait_for_window(fake_infer: FakeInfer):
     ) as batcher:
         for context in contexts:
             await batcher.add_context_to_batch(context)
+
         assert (
             len(fake_infer.enqueued) == 0
         ), "Nothing is enqueued before the batch window is over"
