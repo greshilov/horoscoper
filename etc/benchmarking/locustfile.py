@@ -11,4 +11,4 @@ def get_random_text(length: int = 12):
 class InfersUser(HttpUser):
     @task
     def post_infer(self):
-        self.client.post("/api/v1/infer", json={"text": get_random_text()})
+        self.client.post("/api/v1/infer", json={"prefix": get_random_text()})
