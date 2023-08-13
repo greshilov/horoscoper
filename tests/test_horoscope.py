@@ -1,11 +1,10 @@
 # flake8: noqa
 
-import random
 import tempfile
 
 import pytest
 
-from horoscoper.horoscope import HoroscopeIndex, HoroscopeLLM, Sign
+from horoscoper.horoscope import HoroscopeIndex, HoroscopeLLM
 from horoscoper.llm import LLMContext, LLMInferResult
 
 
@@ -23,30 +22,28 @@ rambler;2019-11-14 00:00:00;ARIES;Овнов сегодня ждет ряд во
 
 
 @pytest.mark.parametrize(
-    "sign,expected",
+    "prefix,expected",
     [
-        [Sign.ARIES, "Вы многое принимаете близко к сердцу"],
-        [Sign.CANCER, ""],
+        ["lol", "Вы многое принимаете близко к сердцу"],
+        ["random", ""],
     ],
 )
-def test_horoscope_index(monkeypatch, horoscope_file, sign, expected):
-    monkeypatch.setattr(random, "choice", lambda l: l[0])
+def test_horoscope_index(monkeypatch, horoscope_file, prefix, expected):
     horoscope_index = HoroscopeIndex.load_from_csv(horoscope_file)
-    assert horoscope_index.predict(sign) == expected
+    assert horoscope_index.predict_by_prefix(prefix) == expected
 
 
 def test_horoscope_llm(monkeypatch, horoscope_file):
-    monkeypatch.setattr(random, "choice", lambda l: l[0])
     llm = HoroscopeLLM(horoscope_file)
     llm.MIN_RESPONSE_TIME_MS = 0
     llm.MAX_RESPONSE_TIME_MS = 10
 
-    prediction = list(llm.infer(LLMContext()))
+    prediction = list(llm.infer(LLMContext(prefix="abcde")))
     assert prediction == [
-        LLMInferResult(text="Вы"),
-        LLMInferResult(text="многое"),
-        LLMInferResult(text="принимаете"),
-        LLMInferResult(text="близко"),
-        LLMInferResult(text="к"),
+        LLMInferResult(text="Вы "),
+        LLMInferResult(text="многое "),
+        LLMInferResult(text="принимаете "),
+        LLMInferResult(text="близко "),
+        LLMInferResult(text="к "),
         LLMInferResult(text="сердцу", is_last_chunk=True),
     ]

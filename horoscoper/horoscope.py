@@ -1,4 +1,5 @@
 import csv
+import hashlib
 import random
 import time
 from enum import Enum
@@ -30,9 +31,15 @@ class HoroscopeIndex:
     def __init__(self, horoscopes: dict[Sign, list[str]]):
         self._horoscopes = horoscopes
 
-    def predict(self, sign: Sign) -> str:
-        if predictions := self._horoscopes[sign]:
-            return random.choice(predictions)
+    def predict_by_prefix(self, prefix: str) -> str:
+        prefix_hash = int(hashlib.sha256(prefix.encode()).hexdigest(), 16)
+        signs = list(Sign)
+
+        chosen_sign = signs[prefix_hash % len(signs)]
+        predictions = self._horoscopes[chosen_sign]
+
+        if len(predictions) > 0:
+            return predictions[prefix_hash % len(predictions)]
         else:
             return ""
 
@@ -64,7 +71,7 @@ class HoroscopeLLM(LLM):
         self.horoscope_index = HoroscopeIndex.load_from_csv(horoscope_csv_file)
 
     def _infer(self, context: LLMContext) -> list[str]:
-        prediction = self.horoscope_index.predict(random.choice(list(Sign)))
+        prediction = self.horoscope_index.predict_by_prefix(context.prefix)
         words = prediction.split(" ")
         return words
 
@@ -79,8 +86,11 @@ class HoroscopeLLM(LLM):
 
         for i, (word, delay) in enumerate(zip(words, delays)):
             time.sleep(delay / 1000)
+
+            is_last_chunk = i == len(words) - 1
+            text = f"{word} " if not is_last_chunk else word
             yield LLMInferResult(
-                text=word,
+                text=text,
                 is_last_chunk=i == len(delays) - 1,
             )
 
@@ -102,9 +112,11 @@ class HoroscopeLLM(LLM):
             for context, words in words_batch:
                 if i < len(words):
                     is_last_chunk = i == len(words) - 1
+                    text = f"{words[i]} " if not is_last_chunk else words[i]
+
                     result = LLMInferResult(
                         is_last_chunk=is_last_chunk,
-                        text=words[i],
+                        text=text,
                     )
                     batch.append((context, result))
 

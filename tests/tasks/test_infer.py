@@ -24,7 +24,7 @@ def patch_get_model(monkeypatch):
             pass
 
         def _infer(self, context: LLMContext):
-            return ["Hello ", "world", "!"]
+            return ["Hello", "world", "!"]
 
     fake_horoscope_llm = FakeHoroscopeLLM()
     monkeypatch.setattr(horoscoper.tasks.infer, "get_model", lambda: fake_horoscope_llm)
@@ -69,7 +69,7 @@ def test_infer_process(patch_get_model, patch_redis):
 
     expected = [
         InferMessage(text="Hello ", status=InferMessageStatus.IN_PROGRESS),
-        InferMessage(text="world", status=InferMessageStatus.IN_PROGRESS),
+        InferMessage(text="world ", status=InferMessageStatus.IN_PROGRESS),
         InferMessage(text="!", status=InferMessageStatus.FINISHED),
     ]
 

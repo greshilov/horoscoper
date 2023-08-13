@@ -94,7 +94,7 @@ async def test_infer_sse(client, monkeypatch, fake_async_redis):
     ]
 
     with fake_pubsub_messages(fake_async_redis, pubsub_messages):
-        request_body = APIInferRequest(text="Hey!").model_dump()
+        request_body = APIInferRequest(prefix="Hey!").model_dump()
 
         async with client.stream(
             "POST",
@@ -119,7 +119,7 @@ async def test_infer_sse_timeout(client, fake_async_redis):
     pubsub_messages = [{"type": "subscribe", "data": ""}, None]
 
     with fake_pubsub_messages(fake_async_redis, messages=pubsub_messages):
-        request_body = APIInferRequest(text="Hey!").model_dump()
+        request_body = APIInferRequest(prefix="Hey!").model_dump()
 
         async with client.stream(
             "POST",

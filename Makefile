@@ -1,28 +1,32 @@
+.PHONY: init
+init:
+	poetry install --with dev
+
 .PHONY: fmt
 lint:
-	black --check .
-	isort --check-only .
-	flake8 .
+	poetry run black --check .
+	poetry run isort --check-only .
+	poetry run flake8 .
 
 .PHONY: fmt
 fmt:
-	black .
-	isort .
+	poetry run black .
+	poetry run isort .
 
 redis:
 	docker compose -p horoscoper-dev -f docker-compose.dev.yml up -d
 
 .PHONY: test
 test:
-	pytest -v .
+	poetry run pytest -v .
 
 .PHONY: dev
 dev-api: redis
-	REDIS_URL=redis://localhost:36379/0 uvicorn horoscoper.api.main:app --reload --log-level debug
+	REDIS_URL=redis://localhost:36379/0 poetry run uvicorn horoscoper.api.main:app --reload --log-level debug
 
 .PHONY: worker
 dev-worker: redis
-	REDIS_URL=redis://localhost:36379/0 python -m horoscoper.tasks.infer
+	REDIS_URL=redis://localhost:36379/0 poetry run python -m horoscoper.tasks.infer
 
 prod:
 	docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build

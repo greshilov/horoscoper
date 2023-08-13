@@ -32,12 +32,12 @@ async def healthcheck(state: State):
 
 
 class APIInferRequest(BaseModel):
-    text: str
+    prefix: str
 
 
 @router.post("/api/v1/infer")
 async def infer(request: Request, state: State, infer_request: APIInferRequest):
-    context = LLMContext(prefix=infer_request.text)
+    context = LLMContext(prefix=infer_request.prefix)
     await state.batcher.add_context_to_batch(context)
 
     async def iter_infer_response():

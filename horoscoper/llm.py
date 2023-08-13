@@ -14,7 +14,7 @@ class LLMContext:
         return self.id.bytes
 
     def __repr__(self) -> str:
-        return f"LLMContext({self.id}, prefix: {len(self.prefix)})"
+        return f"LLMContext({self.id}, prefix: {self.prefix})"
 
 
 @dataclass
