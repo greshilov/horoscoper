@@ -81,6 +81,7 @@ def process(contexts: list[LLMContext]):
 
 if __name__ == "__main__":
     setup_logging()
+    get_model()  # Cache model in memory
     queue = get_queue()
     redis = get_redis()
     worker_name = f"worker-{os.getenv('HOSTNAME', 'localhost')}"

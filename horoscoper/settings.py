@@ -38,7 +38,7 @@ def setup_logging():
 class Settings(BaseSettings):
     batcher_batch_size: int = 4
     batcher_window_ms: int = 250
-    infer_job_ttl: int = 5
+    infer_job_ttl: int = 7
     horoscope_csv_file: Path = ROOT / "etc" / "data" / "horoscopes.csv"
     redis_url: str = "redis://localhost:6379/0"
     log_level: str = "INFO"
