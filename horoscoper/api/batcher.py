@@ -30,7 +30,7 @@ class ContextBatcher:
         self._batch_size = batch_size
         self._window_size = window_size_ms / 1000
 
-    async def run(self):
+    async def _run(self):
         try:
             while True:
                 batch = await self._fill_batch()
@@ -56,7 +56,7 @@ class ContextBatcher:
                     # After we received the first message
                     # we have to set a deadline
                     if cm.deadline is None:
-                        time_passed = max(time.monotonic() - enqueued_time, 0)
+                        time_passed = max(time.monotonic() - enqueued_time, 0.0)
                         time_left = self._window_size - time_passed
 
                         if time_left > 0.0:
@@ -81,7 +81,7 @@ class ContextBatcher:
             return
 
         self._is_running = True
-        self._background_task = spawn(self.run())
+        self._background_task = spawn(self._run())
 
     async def stop(self):
         if not self._is_running:

@@ -1,1 +1,2 @@
 etc/horoscopes.csv filter=lfs diff=lfs merge=lfs -text
+etc/img/arch-overview.png filter=lfs diff=lfs merge=lfs -text

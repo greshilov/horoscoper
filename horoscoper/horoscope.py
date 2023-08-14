@@ -76,7 +76,7 @@ class HoroscopeLLM(LLM):
         return words
 
     def infer(self, context: LLMContext) -> Iterable[LLMInferResult]:
-        """Produce a horoscope based on the supplied context"""
+        """Generate horoscope based on the supplied context"""
         words = self._infer(context)
 
         overall_time = random.randint(
@@ -95,7 +95,7 @@ class HoroscopeLLM(LLM):
             )
 
     def infer_batch(self, contexts: list[LLMContext]) -> Iterable[LLMInferBatchResult]:
-        """Produce a horoscope for multiple contexts"""
+        """Generate horoscope for multiple contexts"""
 
         words_batch = [(context, self._infer(context)) for context in contexts]
 

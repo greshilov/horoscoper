@@ -10,6 +10,9 @@ logger = logging.getLogger(__name__)
 
 
 def produce_n_delays(overall_time: int, n: int) -> list[float]:
+    """
+    Produces sequence of `n` random numbers, that sum up to `overall_time`.
+    """
     delays = [random.random() for _ in range(n)]
     coeff = overall_time / sum(delays)
     return [delay * coeff for delay in delays]
