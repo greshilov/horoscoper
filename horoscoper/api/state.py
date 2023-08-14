@@ -17,7 +17,7 @@ class AppState:
     any asynchronously initialized objects. They are tightly coupled with
     `EventLoop` which is simply doesn't exist during the import time.
 
-    This class is approach to solve this issue by creating dependency that is
+    This class aims to solve this issue by creating dependency that is
     stored in `Application` object itself and initialized during `lifespan` call.
     """
 

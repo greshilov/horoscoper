@@ -53,7 +53,7 @@ class ContextBatcher:
                     enqueued_time, ctx = await self._queue.get()
                     batch.append(ctx)
 
-                    # After we receive the first message
+                    # After we received the first message
                     # we have to set a deadline
                     if cm.deadline is None:
                         time_passed = max(time.monotonic() - enqueued_time, 0)

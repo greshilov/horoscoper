@@ -30,11 +30,11 @@ async def lifespan(app_: FastAPI):
 
 app = FastAPI(
     title="Horoscoper API",
-    description="Convenient API that provide you with horoscopes"
-    "pretending they generated using LLM.",
+    description="Convenient API that provide you with horoscopes,"
+    " pretending they are generated using LLM.",
     lifespan=lifespan,
 )
 
 app.add_middleware(PrometheusMiddleware)
-app.add_route("/metrics", handle_metrics)
+app.add_route("/metrics", handle_metrics, include_in_schema=False)
 app.include_router(router)

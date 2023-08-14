@@ -4,7 +4,7 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse, ServerSentEvent
 
 from horoscoper.llm import LLMContext
@@ -20,19 +20,19 @@ templates = Jinja2Templates(directory=API_DIR / "templates")
 logger = logging.getLogger(__name__)
 
 
-@router.get("/", response_class=HTMLResponse)
+@router.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def index(request: Request):
     return templates.TemplateResponse("index.html", context={"request": request})
 
 
-@router.get("/healthcheck")
+@router.get("/healthcheck", include_in_schema=False)
 async def healthcheck(state: State):
     if not state.batcher.is_running():
         raise HTTPException(status_code=500, detail="API unhealthy")
 
 
 class APIInferRequest(BaseModel):
-    prefix: str
+    prefix: str = Field(max_length=1024)
 
 
 @router.post("/api/v1/infer")

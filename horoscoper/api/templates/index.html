@@ -60,7 +60,7 @@
         <hr/>
     </div>`
 
-    let sources = new Array(N).fill(null);
+    let sources = new Array(N).fill(null)
 
     function makeRequest(i) {
       if (sources[i] !== null) {
@@ -75,13 +75,12 @@
       var source = new SSE(
         "/api/v1/infer",
         {
-          headers: { 'Content-Type': 'application/json' },
-          payload: JSON.stringify({ 'prefix': modelInput.value }),
-          method: 'POST',
+          headers: { "Content-Type": "application/json" },
+          payload: JSON.stringify({ "prefix": modelInput.value }),
+          method: "POST",
         }
       )
-      source.addEventListener('message', function (e) {
-        // Assuming we receive JSON-encoded data payloads:
+      source.addEventListener("message", function (e) {
         let data = JSON.parse(e.data)
         modelOutput.textContent += data["text"]
 
@@ -93,7 +92,7 @@
         if (data["status"] == "FINISHED") {
           source.close()
         }
-      });
+      })
       source.stream()
       sources[i] = source
     }
@@ -102,7 +101,7 @@
     window.onload = () => {
       let parent = document.getElementById("parent")
       for (let i = 0; i < N; i += 1) {
-        let randomInput = (Math.random() + 1).toString(36).substring(7);
+        let randomInput = (Math.random() + 1).toString(36).substring(7)
         element = template.replaceAll("{i}", i).replaceAll("{input}", randomInput)
         parent.innerHTML += element
       }
@@ -111,7 +110,7 @@
         document.getElementById(`request${i}`).addEventListener("click", (e) => {
           e.preventDefault()
           makeRequest(i)
-        });
+        })
       }
 
       document.getElementById(`requestAll`).addEventListener("click", (e) => {
@@ -119,7 +118,7 @@
         for (let i = 0; i < N; i += 1) {
           makeRequest(i)
         }
-      });
+      })
     }
   </script>
 </body>
