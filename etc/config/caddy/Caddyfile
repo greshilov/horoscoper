@@ -1,6 +1,7 @@
 {$DOMAIN} {
   reverse_proxy / api:8000
   reverse_proxy /docs* api:8000
+  reverse_proxy /openapi.json api:8000
   reverse_proxy /api/* api:8000
 
   reverse_proxy /grafana* grafana:3000
