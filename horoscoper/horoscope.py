@@ -68,10 +68,10 @@ class HoroscopeLLM(LLM):
     MAX_RESPONSE_TIME_MS = 3000
 
     def __init__(self, horoscope_csv_file: Path):
-        self.horoscope_index = HoroscopeIndex.load_from_csv(horoscope_csv_file)
+        self._horoscope_index = HoroscopeIndex.load_from_csv(horoscope_csv_file)
 
     def _infer(self, context: LLMContext) -> list[str]:
-        prediction = self.horoscope_index.predict_by_prefix(context.prefix)
+        prediction = self._horoscope_index.predict_by_prefix(context.prefix)
         words = prediction.split(" ")
         return words
 
@@ -91,7 +91,7 @@ class HoroscopeLLM(LLM):
             text = f"{word} " if not is_last_chunk else word
             yield LLMInferResult(
                 text=text,
-                is_last_chunk=i == len(delays) - 1,
+                is_last_chunk=is_last_chunk,
             )
 
     def infer_batch(self, contexts: list[LLMContext]) -> Iterable[LLMInferBatchResult]:

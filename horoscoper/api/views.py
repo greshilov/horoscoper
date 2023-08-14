@@ -63,6 +63,7 @@ async def infer(request: Request, state: State, infer_request: APIInferRequest):
                     return
 
                 raw_message = await pubsub.get_message(timeout=settings.infer_job_ttl)
+                # Timeout case
                 if raw_message is None:
                     logger.info("Timeout inference for %r", context)
                     error_msg = InferMessage(
@@ -81,8 +82,9 @@ async def infer(request: Request, state: State, infer_request: APIInferRequest):
 
                 json_data = raw_message["data"]
                 infer_message = InferMessage.model_validate_json(json_data)
-                infer_messages_count.labels(status=str(infer_message.status)).inc()
 
+                # Metrics
+                infer_messages_count.labels(status=str(infer_message.status)).inc()
                 if first_message:
                     infer_first_response.observe(time.monotonic() - start_infer)
                     first_message = False

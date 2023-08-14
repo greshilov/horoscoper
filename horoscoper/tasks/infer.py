@@ -34,6 +34,10 @@ class InferMessage(BaseModel, extra="allow"):
 
 @cache
 def get_redis() -> Redis:
+    """
+    Redis is cached, to get advantage from
+    the connection pool under the hood.
+    """
     return Redis.from_url(settings.redis_url)
 
 
