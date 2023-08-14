@@ -15,11 +15,14 @@ Live version is available via the following links:
 
 * API is asynchronous (implemented using `FastAPI` framework)
 * Workers are synchronous and controlled via `Redis` with `Python-RQ` [library](https://python-rq.org/)
-* Batching behaviour is simmilar to [static batching][1]
+* Batching behaviour is simmilar to `static batching` (see reference [1])
 * Batching happens on the API side in a separate coroutine (see [horoscoper/api/batcher.py](horoscoper/api/batcher.py))
 * Workers stream their responses back to API on the fly using Pub/Sub 
 
 ## Quickstart
+> [!NOTE]
+> `git lfs` must be [installed](https://git-lfs.com), to fetch static content.
+
 The easiest way to check the project locally would be starting minimal working setup using the following command:  
 ```
 docker compose up --build
@@ -42,7 +45,8 @@ Run the following command and check out the http://localhost:8000/.
 ```
 make dev-api
 ```
-Note, you need at least one running worker in order for API to work correctly.  
+> [!NOTE]
+> You need at least one running worker in order for API to work correctly.
 
 ### Run development worker instance
 ```
@@ -57,10 +61,29 @@ make lint
 ```
 
 ### Tests
+Run the full tests suite.
 ```
 make test
 ```
 
+## Benchmarking
+In order to run benchmark you can install `locust` and run the following command:
+```
+locust --headless --host http://horoscoper.greshilov.me -u 4 -f ./etc/benchmarking/locustfile.py
+```
+
+## Run production setup
+To deploy this project fully with reverse proxy, grafana and prometheus use `prod` command:
+```
+export DOMAIN="{your-domain}"
+export GRAFANA_PASSWORD="{your-grafana-password}"
+make prod
+```
+> [!NOTE]
+> It launches services in the background and may conflict with the regular `docker-compose.yaml` setup.
+  
+
 ## References
-[1]: https://www.anyscale.com/blog/continuous-batching-llm-inference "Continuous batching"  
-[2]: https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events  "SSE Usage"  
+Useful articles used during the development.  
+[1] https://www.anyscale.com/blog/continuous-batching-llm-inference  
+[2] https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events

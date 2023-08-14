@@ -29,7 +29,7 @@ dev-worker: redis
 	REDIS_URL=redis://localhost:36379/0 poetry run python -m horoscoper.tasks.infer
 
 prod:
-	docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build
+	docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d --force-recreate
 
 .PHONY: clean
 clean:
