@@ -47,7 +47,7 @@ def get_queue() -> rq.Queue:
 
 
 def enqueue(contexts: list[LLMContext], **kwargs):
-    logger.info("Enqueue %r contexts: %r", len(contexts), contexts)
+    logger.info("Enqueue contexts: %r", contexts)
     return get_queue().enqueue(process, contexts, **kwargs)
 
 
