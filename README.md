@@ -22,20 +22,28 @@ Live version is available via the following links:
 ## Quickstart
 > [!NOTE]
 > `git lfs` must be [installed](https://git-lfs.com), to fetch static content.
+> `docker` must be [installed](https://docs.docker.com/engine/install).
 
-The easiest way to check the project locally would be starting minimal working setup using the following command:  
+Clone the repo and start the minimal working setup using the following command:  
 ```
 docker compose up --build
 ```
 This command will spin up one API instance, two workers and redis.  
+  
 Check the http://localhost:8080/ to play with the web interface :)  
 To change number of workers update the `worker:deploy:replicas` key in [docker-compose.yml](./docker-compose.yml) file.
 
 ## Development
 This project uses Makefile as a primary automation tool, so please ensure `make` command is available in your environment. Commands from Makefile also require `poetry` to be installed (check the installation instructions [here](https://python-poetry.org/docs/#installation)).
 
+### Check that all required tools are installed
+```
+make -v  # GNU Make 4.4.1...
+poetry -V  # Poetry (version 1.5.1)
+```
+
 ### Install dependencies
-Firstly install all the required dependecies.
+Firstly, install all the required dependecies.
 ```
 make init
 ```
